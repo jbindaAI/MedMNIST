@@ -4,6 +4,7 @@ from typing import List, Literal, Optional, Tuple
 from torch.utils.data import DataLoader
 from monai import transforms as T
 from torchvision.transforms import v2
+from math import ceil
 from random import choice
 from numpy import linspace
 import torch
@@ -11,7 +12,7 @@ import pickle
 import os 
 
 
-class DataModule(pl.LightningDataModule):
+class DataModule2D(pl.LightningDataModule):
     def __init__(self,
                  data_flag:DataFlag,
                  img_size:Literal[28,64,128,224]=28,
@@ -44,9 +45,12 @@ class DataModule(pl.LightningDataModule):
                                        download=True)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
+        # number of image channels:
+        self.n_channels = dataset.info['n_channels']
+        
         # Computing mean and standard deviation:
-        channel_sum = torch.zeros(3)
-        channel_sum_of_squares = torch.zeros(3)
+        channel_sum = torch.zeros(self.n_channels)
+        channel_sum_of_squares = torch.zeros(self.n_channels)
         pixel_count = 0
         for images, _ in loader:
             # Accumulate the sum of pixel values for each channel
@@ -61,6 +65,8 @@ class DataModule(pl.LightningDataModule):
         # Compute the standard deviation using the sum of squares
         channel_std = torch.sqrt((channel_sum_of_squares / pixel_count) - (channel_mean ** 2))
         
+        if not os.path.exists("fitted_factors/"):
+            os.makedirs("fitted_factors/")
         with open(f"fitted_factors/{self.data_flag.value}.pkl", "wb") as file:
             pickle.dump((channel_mean, channel_std), file)
             
@@ -76,7 +82,8 @@ class DataModule(pl.LightningDataModule):
                            "ColorJitter": v2.ColorJitter(brightness=.2, hue=.2, contrast=.2, saturation=.2),
                            "RandomVerticalFlip": v2.RandomVerticalFlip(p=0.5),
                            "RandomHorizontalFlip": v2.RandomHorizontalFlip(p=0.5),
-                           "RandomResizedCrop": v2.RandomResizedCrop(size=self.img_size, scale=(0.8, 1.0))
+                           "RandomResizedCrop": v2.RandomResizedCrop(size=[224,224], scale=(0.8, 1.0)),
+                           "Resize": v2.Resize(size=[224, 224])
                           }
         
         train_transforms=v2.Compose([transforms_dict[key] for key in train_transforms])
@@ -86,7 +93,6 @@ class DataModule(pl.LightningDataModule):
       
     
     def setup(self, stage=None):
-
         try:
             with open(f"fitted_factors/{self.data_flag.value}.pkl", "rb") as file:
                 self.mean_std = pickle.load(file)
@@ -99,6 +105,12 @@ class DataModule(pl.LightningDataModule):
         self.train_ds = get_medmnist_dataset(mode="train", data_flag=self.data_flag, data_transform=train_transforms, size=self.img_size)
         self.val_ds = get_medmnist_dataset(mode="val", data_flag=self.data_flag, data_transform=eval_transforms, size=self.img_size)
         self.test_ds = get_medmnist_dataset(mode="test", data_flag=self.data_flag, data_transform=eval_transforms, size=self.img_size)
+
+    
+    def get_epoch_train_steps(self)->int:
+        n_examples = len(self.train_ds)
+        total_train_steps = ceil(n_examples/self.batch_size)
+        return int(total_train_steps)
 
 
     def train_dataloader(self):

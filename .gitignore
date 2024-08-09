@@ -1,4 +1,8 @@
 .ipynb_checkpoints/
 __pycache__/
 fitted_factors/
+wandb/
+wsad.slurm
+slurm-*
+DINO_ViT_source/pretrained/
 
