@@ -16,7 +16,8 @@ current_directory = os.getcwd()
 
 model_map = {
     "pathmnist": {"task": "classification", "model_nr": 3},
-    "bloodmnist": {"task": "classification", "model_nr": 1}
+    "bloodmnist": {"task": "classification", "model_nr": 1},
+    "organamnist": {"task": "classification", "model_nr": 4}
 }
 
 
@@ -64,7 +65,7 @@ def cdam_pipeline(DATASET,
     
     # Loading model and registering hooks:
     device = "cuda" if torch.cuda.is_available() else "cpu"    
-    model = DINO_Model.load_from_checkpoint(current_directory + f"/ckpt/{DATASET.info['python_class'].lower()}_{MODEL_BCKB}_{MODEL_NR}{ckpt_versions[CKPT_VERSION]}.ckpt").to(device).eval()
+    model = DINO_Model.load_from_checkpoint(current_directory + f"/ckpt/{DATASET.info['python_class'].lower()}_{MODEL_BCKB}_{MODEL_NR}{ckpt_versions[CKPT_VERSION]}.ckpt", strict=False).to(device).eval()
 
     ## Creating hooks:
     activation = {}

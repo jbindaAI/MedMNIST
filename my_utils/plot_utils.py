@@ -76,7 +76,8 @@ def plot_CDAM(original_img, attention_map, cdam_maps, preds, save_name:Optional[
         fig, axs = plt.subplots(1, 3, figsize=(10, 4), layout='constrained')
 
         ## Original img:
-        axs[0].imshow(original_img)
+        cmap = "grey" if original_img.mode == "L" else None
+        axs[0].imshow(original_img, cmap=cmap)
         axs[0].set_title("Original")
         axs[0].tick_params(axis='both', 
                            which='both', 
