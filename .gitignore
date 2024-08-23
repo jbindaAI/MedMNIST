@@ -5,4 +5,10 @@ wandb/
 wsad.slurm
 slurm-*
 DINO_ViT_source/pretrained/
+ckpt/
+dm_cache/
+results/
+*.log
+wsad_test.slurm
+wsad_train.slurm
 

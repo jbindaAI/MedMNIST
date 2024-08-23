@@ -35,7 +35,6 @@ def get_medmnist_dataset(
     ):
 
     info = INFO[data_flag.value]
-    ds_names = {"train": "train_dataset", "val": "val_dataset", "test": "test_dataset"}
 
     try:
         DataClass = getattr(medmnist, info['python_class'])
